@@ -10,3 +10,7 @@ echo "Running on dataset Wisconsin"
 python train.py --dataset wisconsin --wd 5e-4 --dropout 0.5 --lr 0.05 --without-relu
 echo "Running on dataset Actor"
 python train.py --dataset actor --wd 5e-4 --dropout 0.5 --lr 0.1 --hidden 128 --without-relu
+
+python train.py --dataset cora --wd 5e-4 --dropout 0.8 --lr 0.01 --hidden 64 --without-relu
+python train.py --dataset citeseer --wd 5e-4 --dropout 0.5 --lr 0.01 --hidden 64 --without-relu
+python train.py --dataset pubmed --wd 5e-4 --dropout 0.5 --lr 0.01 --hidden 64 --without-relu
