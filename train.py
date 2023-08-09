@@ -7,6 +7,7 @@ import torch.optim as optim
 import utils
 from utils import accuracy, set_seed, select_mask, load_dataset
 from model import H2GCN
+import numpy as np
 
 # Training settings
 parser = argparse.ArgumentParser()
@@ -19,7 +20,7 @@ parser.add_argument('--wd', type=float, default=5e-4, help='weight decay value')
 parser.add_argument('--hidden', type=int, default=64, help='embedding output dim')
 parser.add_argument('--dropout', type=float, default=0.5, help='dropout rate')
 parser.add_argument('--patience', type=int, default=50, help='patience for early stop')
-parser.add_argument('--dataset', default='cora', help='dateset name')
+parser.add_argument('--dataset', default='pubmed', help='dateset name')
 parser.add_argument('--gpu', type=int, default=0, help='gpu id to use while training, set -1 to use cpu')
 parser.add_argument('--split-id', type=int, default=0, help='the data split to use')
 args = parser.parse_args()
@@ -56,33 +57,42 @@ def test():
 
 
 def main():
-    begin_time = time.time()
-    tolerate = 0
-    best_loss = 1000
-    for epoch in range(args.epochs):
-        loss_train, acc_train = train()
-        loss_validate, acc_validate = validate()
-        if (epoch + 1) % 1 == 0:
-            print(
-                'Epoch {:03d}'.format(epoch + 1),
-                '|| train',
-                'loss : {:.3f}'.format(loss_train),
-                ', accuracy : {:.2f}%'.format(acc_train * 100),
-                '|| val',
-                'loss : {:.3f}'.format(loss_validate),
-                ', accuracy : {:.2f}%'.format(acc_validate * 100)
-            )
-        if loss_validate < best_loss:
-            best_loss = loss_validate
-            torch.save(model.state_dict(), checkpoint_path)
-            tolerate = 0
-        else:
-            tolerate += 1
-        if tolerate == args.patience:
-            break
-    print("Train cost : {:.2f}s".format(time.time() - begin_time))
-    print("Test accuracy : {:.2f}%".format(test()[1] * 100), "on dataset", args.dataset)
+    # initialize placeholders for early stopping
+    result = []
+    for _ in range(0, 10):
+        begin_time = time.time()
+        tolerate = 0
+        best_loss = 1000
+        for epoch in range(args.epochs):
+            loss_train, acc_train = train()
+            loss_validate, acc_validate = validate()
+            if (epoch + 1) % 1 == 0:
+                print(
+                    'Epoch {:03d}'.format(epoch + 1),
+                    '|| train',
+                    'loss : {:.3f}'.format(loss_train),
+                    ', accuracy : {:.2f}%'.format(acc_train * 100),
+                    '|| val',
+                    'loss : {:.3f}'.format(loss_validate),
+                    ', accuracy : {:.2f}%'.format(acc_validate * 100)
+                )
+            if loss_validate < best_loss:
+                best_loss = loss_validate
+                torch.save(model.state_dict(), checkpoint_path)
+                tolerate = 0
+            else:
+                tolerate += 1
+            if tolerate == args.patience:
+                break
+        print("Train cost : {:.2f}s".format(time.time() - begin_time))
+        print("Test accuracy : {:.2f}%".format(test()[1] * 100), "on dataset", args.dataset)
+        result.append(test()[1])
 
+    print(result)
+    mean_result = np.mean(result)
+    std_result = np.std(result)
+    print('ACC:', mean_result*100)
+    print('std:', std_result*100)
 
 if __name__ == '__main__':
     set_seed(args.seed)
